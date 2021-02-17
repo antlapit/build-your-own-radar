@@ -11,7 +11,8 @@ describe('InputSanitizer', function () {
       description: description,
       ring: '<a href="/asd">Adopt</a>',
       quadrant: '<strong>techniques and tools</strong>',
-      isNew: 'true<br>'
+      isNew: 'true<br>',
+      changeType: 'IN<br>'
     }
 
     blip = sanitizer.sanitize(rawBlip)

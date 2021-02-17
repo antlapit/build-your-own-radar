@@ -129,6 +129,48 @@ const Radar = function (size, radar) {
       .attr('transform', 'scale(' + (22 / 64) + ') translate(' + (-404 + x * (64 / 22) - 17) + ', ' + (-282 + y * (64 / 22) - 17) + ')')
   }
 
+  function arc (blip, x, y, order, group, directionToCenter) {
+    let arcDefinition = null
+    if ((order === 'first' && !directionToCenter) || (order === 'third' && directionToCenter)) {
+      arcDefinition = 'M18,-1\n' +
+        'c0,0.88,0.7,1.56,1.56,1.56\n' +
+        'c8.16,0,14.8,6.64,14.8,14.8\n' +
+        'c0,0.86,0.7,1.56,1.56,1.56\n' +
+        'c0.86,0,1.56,-0.7,1.56,-1.56\n' +
+        'c0.02,-9.88,-8.02,-17.92,-17.92,-17.92\n' +
+        'c-0.87,0,-1.57,0.7,-1.57,1.56z\n'
+    } else if ((order === 'second' && !directionToCenter) || (order === 'fourth' && directionToCenter)) {
+      arcDefinition = 'M15,-1\n' +
+        'c0,0.88,-0.7,1.56,-1.56,1.56\n' +
+        'c-8.16,0,-14.8,6.64,-14.8,14.8\n' +
+        'c0,0.86,-0.7,1.56,-1.56,1.56\n' +
+        'c-0.86,0,-1.56,-0.7,-1.56,-1.56\n' +
+        'c-0.02,-9.88,8.02,-17.92,17.92,-17.92\n' +
+        'c0.87,0,1.57,0.7,1.57,1.56z\n'
+    } else if ((order === 'first' && directionToCenter) || (order === 'third' && !directionToCenter)) {
+      arcDefinition = 'M16,36\n' +
+        'c0,-0.88,-0.7,-1.56,-1.56,-1.56\n' +
+        'c-8.16,0,-14.8,-6.64,-14.8,-14.8\n' +
+        'c0,-0.86,-0.7,-1.56,-1.56,-1.56\n' +
+        'c-0.86,0,-1.56,0.7,-1.56,1.56\n' +
+        'c-0.02,9.88,8.02,17.92,17.92,17.92\n' +
+        'c0.87,0,1.57,-0.7,1.57,-1.56z\n'
+    } else if ((order === 'second' && directionToCenter) || (order === 'fourth' && !directionToCenter)) {
+      arcDefinition = 'M19,37\n' +
+        'c0,-0.88,0.7,-1.56,1.56,-1.56\n' +
+        'c8.16,0,14.8,-6.64,14.8,-14.8\n' +
+        'c0,-0.86,0.7,-1.56,1.56,-1.56\n' +
+        'c0.86,0,1.56,0.7,1.56,1.56\n' +
+        'c0.02,9.88,-8.02,17.92,-17.92,17.92\n' +
+        'c-0.87,0,-1.57,-0.7,-1.57,-1.56z\n'
+    }
+
+    return (group || svg).append('path')
+      .attr('d', arcDefinition)
+      .attr('transform', 'scale(' + (blip.width / 34) + ') translate(' + (x * (34 / blip.width) - 17) + ', ' + (y * (34 / blip.width) - 19) + ')')
+      .attr('class', order)
+  }
+
   function addRing (ring, order) {
     var table = d3.select('.quadrant-table.' + order)
     table.append('h3').text(ring)
@@ -237,10 +279,17 @@ const Radar = function (size, radar) {
 
     var group = quadrantGroup.append('g').attr('class', 'blip-link').attr('id', 'blip-link-' + blip.number())
 
-    if (blip.isNew()) {
+    if (blip.getChangeType() === 'NEW') {
       triangle(blip, x, y, order, group)
     } else {
       circle(blip, x, y, order, group)
+
+      switch (blip.getChangeType()) {
+        case 'IN':
+        case 'OUT':
+          arc(blip, x, y, order, group, blip.getChangeType() === 'IN')
+          break
+      }
     }
 
     group.append('text')
@@ -284,7 +333,7 @@ const Radar = function (size, radar) {
 
     var clickBlip = function () {
       d3.select('.blip-item-description.expanded').node() !== blipItemDescription.node() &&
-        d3.select('.blip-item-description.expanded').classed('expanded', false)
+      d3.select('.blip-item-description.expanded').classed('expanded', false)
       blipItemDescription.classed('expanded', !blipItemDescription.classed('expanded'))
 
       blipItemDescription.on('click', function () {
@@ -408,7 +457,7 @@ const Radar = function (size, radar) {
     selectQuadrant.bind({}, quadrant.order, quadrant.startAngle)()
     const selectedDesc = d3.select('#blip-description-' + blip.number())
     d3.select('.blip-item-description.expanded').node() !== selectedDesc.node() &&
-        d3.select('.blip-item-description.expanded').classed('expanded', false)
+    d3.select('.blip-item-description.expanded').classed('expanded', false)
     selectedDesc.classed('expanded', true)
 
     d3.selectAll('g.blip-link').attr('opacity', 0.3)
@@ -499,9 +548,9 @@ const Radar = function (size, radar) {
       .attr('class', 'footer-content')
       .append('p')
       .html('Powered by <a href="https://www.thoughtworks.com"> ThoughtWorks</a>. ' +
-      'By using this service you agree to <a href="https://www.thoughtworks.com/radar/tos">ThoughtWorks\' terms of use</a>. ' +
-      'You also agree to our <a href="https://www.thoughtworks.com/privacy-policy">privacy policy</a>, which describes how we will gather, use and protect any personal data contained in your public Google Sheet. ' +
-      'This software is <a href="https://github.com/thoughtworks/build-your-own-radar">open source</a> and available for download and self-hosting.')
+        'By using this service you agree to <a href="https://www.thoughtworks.com/radar/tos">ThoughtWorks\' terms of use</a>. ' +
+        'You also agree to our <a href="https://www.thoughtworks.com/privacy-policy">privacy policy</a>, which describes how we will gather, use and protect any personal data contained in your public Google Sheet. ' +
+        'This software is <a href="https://github.com/thoughtworks/build-your-own-radar">open source</a> and available for download and self-hosting.')
   }
 
   function mouseoverQuadrant (order) {
